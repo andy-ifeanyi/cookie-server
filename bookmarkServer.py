@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 #
 # A *bookmark server* or URI shortener.
-
+import threading
 import http.server
 import requests
 import os
+
+from socketserver import ThreadingMixIn
 from urllib.parse import unquote, parse_qs
 
 memory = {}
@@ -98,7 +100,12 @@ class Shortener(http.server.BaseHTTPRequestHandler):
                 "Couldn't fetch URI '{}'. Sorry!".format(longuri).encode())
 
 
+class ThreadHTTPServer(ThreadingMixIn, http.server.HTTPServer):
+    "This is an HTTPServer that supports thread-based concurrency."
+
+
 if __name__ == '__main__':
-    server_address = ('', int(os.environ.get('PORT', '8000')))
-    httpd = http.server.HTTPServer(server_address, Shortener)
+    port = int(os.environ.get('PORT', 8000))
+    server_address = ('', port)
+    httpd = ThreadHTTPServer(server_address, Shortener)
     httpd.serve_forever()
